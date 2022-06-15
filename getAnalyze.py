@@ -17,7 +17,7 @@ import json
 
 
 def connect_to_twitter():
-    bearer_token = 'AAAAAAAAAAAAAAAAAAAAAHdHdgEAAAAAgPDw6GUk0r2%2BWXfjbchVb9XBYZk%3Dm17s8NVA1f9b5rpqANFKsb8PUBXA4ERcAUKv65nhZE5Wxx56wA'
+    bearer_token = 'AAAAAAAAAAAAAAAAAAAAAHdHdgEAAAAAqaDMiBWuPLl6978bB1pwyg0XQgU%3DWemywT3d1Kqt8PlnSo7XMwkwP1LeSHq3mPHfLoIChgMnWq5TGx'
     return {"Authorization" : "Bearer " + bearer_token}
 
 
@@ -36,7 +36,8 @@ def make_request(headers):
     #query = "query=conversation_id:1535888836898607104 OR url:1536230662457307137"
     query = "query=indihome -is:retweet"
     #query = "query=from:twitterdev -is:reply -is:retweet"
-    params = max_result + "&" + query
+    tweet_fields = "tweet.fields=created_at,author_id"
+    params = max_result + "&" + query + "&" + tweet_fields
     return requests.request("GET", url, params=params, headers=headers).json()
 
 
@@ -51,6 +52,7 @@ def get_tweets_data():
     neutral = 0
     polarity = 0
     tweet_list = []
+    sentiment = ""
 
     for tweet in tweets['data']:
         original_tweet = tweet['text']
@@ -65,15 +67,22 @@ def get_tweets_data():
         
         if polarity > 0:
             positive += 1
+            sentiment = 'positive'
         elif polarity < 0:
             negative += 1
+            sentiment = 'negative'
         else:
             neutral += 1
+            sentiment = 'neutral'
         
         tweet_properties = {
             'tweet_id' : tweet['id'],
+            'author_id' : tweet['author_id'],
             'original_tweet' : original_tweet,
-            'polarity' : polarity
+            'clean_tweet' : tweet['text'],
+            'polarity' : polarity,
+            'sentiment' : sentiment,
+            'created_dtm' : tweet['created_at']
         }
         
         tweet_list.append(tweet_properties)
