@@ -11,13 +11,14 @@ from textblob import TextBlob
 import re
 from textblob.classifiers import NaiveBayesClassifier
 import json
+import translators as ts
 
 
 # In[2]:
 
 
 def connect_to_twitter():
-    bearer_token = 'AAAAAAAAAAAAAAAAAAAAAHdHdgEAAAAAqaDMiBWuPLl6978bB1pwyg0XQgU%3DWemywT3d1Kqt8PlnSo7XMwkwP1LeSHq3mPHfLoIChgMnWq5TGx'
+    bearer_token = 'AAAAAAAAAAAAAAAAAAAAAHdHdgEAAAAAfeShfQ5b43jfs7zVyTTjTpecq68%3D0rbfMnF974zUZEeYpu72Y7gDSKlEULZx6LMp1KfGbgEvkkajJY'
     return {"Authorization" : "Bearer " + bearer_token}
 
 
@@ -30,49 +31,72 @@ headers = connect_to_twitter()
 # In[6]:
 
 
-def make_request(headers):
+def make_request(headers, start_date, end_date):
     url = "https://api.twitter.com/2/tweets/search/recent?"
-    max_result = "max_results=100"
+    max_result  = "max_results=100"
+    start_time  = "start_time=" + start_date
+    end_time    = "end_time=" + end_date
     #query = "query=conversation_id:1535888836898607104 OR url:1536230662457307137"
     query = "query=indihome -is:retweet"
     #query = "query=from:twitterdev -is:reply -is:retweet"
     tweet_fields = "tweet.fields=created_at,author_id"
-    params = max_result + "&" + query + "&" + tweet_fields
+    params = start_time + "&" + end_time + "&" + max_result + "&" + query + "&" + tweet_fields
+    # print(params)
     return requests.request("GET", url, params=params, headers=headers).json()
 
 
 # In[18]:
 
+def test():
+    analysis = TextBlob('test')
+    try:
+        an = analysis.translate(from_lang='id', to='en')        
+    except:
+        print("error")
+    
+    polarity = an.sentiment.polarity
 
-def get_tweets_data():
+    if polarity > 0:
+        sentiment = 'positive'
+    elif polarity < 0:
+        sentiment = 'negative'
+    else:
+        sentiment = 'neutral'
 
-    tweets = make_request(headers)
-    positive = 0
-    negative = 0
-    neutral = 0
+    return sentiment
+    
+
+def get_tweets_data(start_date, end_date):
+    tweets = make_request(headers, start_date, end_date)
     polarity = 0
     tweet_list = []
     sentiment = ""
 
     for tweet in tweets['data']:
+        print(tweet['created_at'])
         original_tweet = tweet['text']
-        tweet['text'] = ' '.join(re.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)"," ",tweet['text']).split())
-        analysis = TextBlob(tweet['text'])
-        try:
-            an = analysis.translate(from_lang='id', to='en')        
-        except:
-            continue
+        tweet['text'] = ' '.join(re.sub("(@[A-Za-z0-9]+)|(\d+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)"," ",tweet['text']).split())
+        tweet['text'] = tweet['text'].lower()
+        tweet_translated = ts.google(tweet['text'])
         
-        polarity = an.sentiment.polarity
+        analysis = TextBlob(tweet_translated)
+
+        
+        # try:
+        #     an = analysis.translate(from_lang='id', to='en')
+        # except:
+        #     print("error")
+        #     continue
+        
+        polarity = analysis.sentiment.polarity
+
+        # print(polarity)
         
         if polarity > 0:
-            positive += 1
             sentiment = 'positive'
         elif polarity < 0:
-            negative += 1
             sentiment = 'negative'
         else:
-            neutral += 1
             sentiment = 'neutral'
         
         tweet_properties = {
@@ -84,8 +108,9 @@ def get_tweets_data():
             'sentiment' : sentiment,
             'created_dtm' : tweet['created_at']
         }
+
+        # print(tweet_properties)
         
         tweet_list.append(tweet_properties)
 
     return json.dumps(tweet_list)
-    # return "success return"
