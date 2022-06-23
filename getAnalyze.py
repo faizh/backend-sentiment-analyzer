@@ -13,6 +13,7 @@ from textblob.classifiers import NaiveBayesClassifier
 import json
 import translators as ts
 
+import model
 
 # In[2]:
 
@@ -67,30 +68,20 @@ def test():
     
 
 def get_tweets_data(start_date, end_date):
-    tweets = make_request(headers, start_date, end_date)
+    # tweets = make_request(headers, start_date, end_date)
+    tweets      = json.loads(model.get_conversation_from_tweet_id(start_date, end_date))
     polarity = 0
     tweet_list = []
     sentiment = ""
 
-    for tweet in tweets['data']:
-        print(tweet['created_at'])
+    for tweet in tweets:
         original_tweet = tweet['text']
         tweet['text'] = ' '.join(re.sub("(@[A-Za-z0-9]+)|(\d+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)"," ",tweet['text']).split())
         tweet['text'] = tweet['text'].lower()
         tweet_translated = ts.google(tweet['text'])
         
         analysis = TextBlob(tweet_translated)
-
-        
-        # try:
-        #     an = analysis.translate(from_lang='id', to='en')
-        # except:
-        #     print("error")
-        #     continue
-        
         polarity = analysis.sentiment.polarity
-
-        # print(polarity)
         
         if polarity > 0:
             sentiment = 'positive'

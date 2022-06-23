@@ -57,8 +57,6 @@ def analyze_tweets():
     for x in data_train:
         clean_tweet = x[3]
         sentiment   = x[5]
-        print('clean tweet')
-        print(clean_tweet)
         if (sentiment == 'negative') :
             neg_words = word_tokenize(clean_tweet)
             train_arr_neg_words.append((create_word_features(neg_words),"negative"))
