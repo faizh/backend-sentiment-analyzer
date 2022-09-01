@@ -5,14 +5,21 @@ import nltk
 from nltk.tokenize import  word_tokenize
 from nltk.corpus import stopwords #imports stopwords from nltk
 from nltk.classify import NaiveBayesClassifier
+from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
+from textblob import TextBlob
+import translators as ts
+
+# create stemmer
+factory = StemmerFactory()
+stemmer = factory.create_stemmer()
     
 # connecting to the database 
 dataBase = mysql.connector.connect(
                      host = "localhost",
                      user = "root",
-                     passwd = "password",
+                     passwd = "root",
                      database = "sentiment-analyzer",
-                     port = 3306 ) 
+                     port = 8889 ) 
     
 # preparing a cursor object 
 cursorObject = dataBase.cursor()
@@ -57,14 +64,17 @@ def analyze_tweets():
     for x in data_train:
         clean_tweet = x[3]
         sentiment   = x[5]
+
+        stemmed_tweet = stemmer.stem(clean_tweet)
+
         if (sentiment == 'negative') :
-            neg_words = word_tokenize(clean_tweet)
+            neg_words = word_tokenize(stemmed_tweet)
             train_arr_neg_words.append((create_word_features(neg_words),"negative"))
         elif (sentiment == 'positive') :
-            pos_words = word_tokenize(clean_tweet)
+            pos_words = word_tokenize(stemmed_tweet)
             train_arr_pos_words.append((create_word_features(pos_words),"positive"))
         else :
-            neutral_words = word_tokenize(clean_tweet)
+            neutral_words = word_tokenize(stemmed_tweet)
             train_arr_neutral_words.append((create_word_features(neutral_words),"neutral"))
 
     arr_train_words = train_arr_neg_words + train_arr_pos_words + train_arr_neutral_words
@@ -73,14 +83,17 @@ def analyze_tweets():
     for x in data_test:
         clean_tweet = x[1]
         sentiment   = x[2]
+
+        stemmed_tweet = stemmer.stem(clean_tweet)
+        
         if (sentiment == 'negative') :
-            neg_words = word_tokenize(clean_tweet)
+            neg_words = word_tokenize(stemmed_tweet)
             test_arr_neg_words.append((create_word_features(neg_words),"negative"))
         elif (sentiment == 'positive') :
-            pos_words = word_tokenize(clean_tweet)
+            pos_words = word_tokenize(stemmed_tweet)
             test_arr_pos_words.append((create_word_features(pos_words),"positive"))
         else :
-            neutral_words = word_tokenize(clean_tweet)
+            neutral_words = word_tokenize(stemmed_tweet)
             test_arr_neutral_words.append((create_word_features(neutral_words),"neutral"))
 
     arr_test_words = test_arr_neg_words + test_arr_pos_words + test_arr_neutral_words
@@ -90,20 +103,38 @@ def analyze_tweets():
     for x in data_test:
         tweet_id = x[0]
         clean_tweet = x[1]
-        words = word_tokenize(clean_tweet)
+
+        stemmed_tweet = stemmer.stem(clean_tweet)
+        
+        # start textblob sentiment result
+        tweet_translated = ts.google(stemmed_tweet)
+        
+        analysis = TextBlob(tweet_translated)
+        polarity = analysis.sentiment.polarity
+        
+        if polarity > 0:
+            sentiment_textblob = 'positive'
+        elif polarity < 0:
+            sentiment_textblob = 'negative'
+        else:
+            sentiment_textblob = 'neutral'
+
+        # start naivebayes sentiment result
+        words = word_tokenize(stemmed_tweet)
         words = create_word_features(words)
         sentiment_result = classifier.classify(words)
 
-        query = "UPDATE `t_data_uji` SET naive_bayes_analysis = '" + sentiment_result + "' WHERE tweet_id = %s"
+        # updating data uji
+        query = "UPDATE `t_data_uji` SET naive_bayes_analysis = '" + sentiment_result + "', textblob_analysis = '" + sentiment_textblob +"' WHERE tweet_id = %s"
         cursorObject.execute(query, (tweet_id,))
 
     # delete data
-    query = "DELETE FROM t_data"
-    cursorObject.execute(query)
+    # query = "DELETE FROM t_data"
+    # cursorObject.execute(query)
 
     # insert data
     accuracy = nltk.classify.util.accuracy(classifier, arr_test_words)
-    query = "INSERT INTO t_data(accuracy) VALUES (%s)"
+    query = "UPDATE t_data SET accuracy = (%s)"
     cursorObject.execute(query, (accuracy,))
 
 

@@ -78,17 +78,19 @@ def get_tweets_data(start_date, end_date):
         original_tweet = tweet['text']
         tweet['text'] = ' '.join(re.sub("(@[A-Za-z0-9]+)|(\d+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)"," ",tweet['text']).split())
         tweet['text'] = tweet['text'].lower()
-        tweet_translated = ts.google(tweet['text'])
+        # tweet_translated = ts.google(tweet['text'])
+        # print(tweet['text'])
         
-        analysis = TextBlob(tweet_translated)
-        polarity = analysis.sentiment.polarity
+        # analysis = TextBlob(tweet_translated)
+        # polarity = analysis.sentiment.polarity
         
-        if polarity > 0:
-            sentiment = 'positive'
-        elif polarity < 0:
-            sentiment = 'negative'
-        else:
-            sentiment = 'neutral'
+        # if polarity > 0:
+        #     sentiment = 'positive'
+        # elif polarity < 0:
+        #     sentiment = 'negative'
+        # else:
+        #     sentiment = 'neutral'
+        print(tweet['text'])
         
         tweet_properties = {
             'tweet_id' : tweet['id'],
