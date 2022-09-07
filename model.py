@@ -67,9 +67,42 @@ def get_conversation_from_tweet_id(start_date, end_date):
     #         tweet_details_arr.append(tweet_detail)
     
     tweet_details_arr = []
-    tweet_details = get_tweets_from_id(start_date, end_date)
-    for tweet_detail in tweet_details['data']:
-        tweet_details_arr.append(tweet_detail)
+    curr_end_date = "00:00:00"
+    for x in range(0, 24, 4):
+        if x < 12:
+            hours = "0"
+        else:
+            hours = ""
+
+        if x > 4:
+            hours_curr = x - 4
+            if hours_curr < 10:
+                hours_curr = "0" + str(hours_curr)
+            else:
+                hours_curr = str(hours_curr)
+        else:
+            hours_curr = "00"
+
+        curr_start_date = hours_curr +":00:00"
+        next_start_date = hours + str(x) +":00:00"
+        curr_end_date   = curr_end_date
+        if (x + 4) > 10:
+            hours_end_date = ""
+            if (x + 4) == 24:
+                x = x-1
+        else:
+            hours_end_date = "0"
+        next_end_date   = hours_end_date + str(x + 4) +":00:00"
+        start_date = start_date.replace(curr_start_date, next_start_date)
+        end_date   = end_date.replace(curr_end_date, next_end_date)
+        curr_start_date = next_start_date
+        curr_end_date   = next_end_date
+
+        print(start_date)
+        print(end_date)
+        tweet_details = get_tweets_from_id(start_date, end_date)
+        for tweet_detail in tweet_details['data']:
+            tweet_details_arr.append(tweet_detail)
 
     
     return json.dumps(tweet_details_arr)
