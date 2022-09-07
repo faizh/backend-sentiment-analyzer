@@ -20,8 +20,9 @@ def get_tweets_from_id(start_date, end_date):
     max_result  = "max_results=100"
     start_time  = "start_time=" + start_date
     end_time    = "end_time=" + end_date
-    query       = "query=from:IndiHomeCare -is:retweet -is:reply"
-    params = start_time + "&" + end_time + "&" + max_result + "&" + query
+    query       = "query=indihome"
+    tweet_fields = "tweet.fields=created_at,author_id"
+    params = start_time + "&" + end_time + "&" + max_result + "&" + query + "&" + tweet_fields
     response_tweet = requests.request("GET", url, params=params, headers=headers).json()
     
     return response_tweet
@@ -58,12 +59,17 @@ def get_tweet_id_from_tweets_created(start_date, end_date):
     return tweet_id
 
 def get_conversation_from_tweet_id(start_date, end_date):
-    tweets_id = get_tweet_id_from_tweets_created(start_date, end_date)
+    # tweets_id = get_tweet_id_from_tweets_created(start_date, end_date)
+    # tweet_details_arr = []
+    # for tweet_id in tweets_id:
+    #     tweet_details = query_get_conversation_by_tweet_id(tweet_id, start_date, end_date)
+    #     for tweet_detail in tweet_details['data']:
+    #         tweet_details_arr.append(tweet_detail)
+    
     tweet_details_arr = []
-    for tweet_id in tweets_id:
-        tweet_details = query_get_conversation_by_tweet_id(tweet_id, start_date, end_date)
-        for tweet_detail in tweet_details['data']:
-            tweet_details_arr.append(tweet_detail)
+    tweet_details = get_tweets_from_id(start_date, end_date)
+    for tweet_detail in tweet_details['data']:
+        tweet_details_arr.append(tweet_detail)
 
     
     return json.dumps(tweet_details_arr)

@@ -17,9 +17,9 @@ stemmer = factory.create_stemmer()
 dataBase = mysql.connector.connect(
                      host = "localhost",
                      user = "root",
-                     passwd = "root",
+                     passwd = "",
                      database = "sentiment-analyzer",
-                     port = 8889 ) 
+                     port =  "3306") 
     
 # preparing a cursor object 
 cursorObject = dataBase.cursor()
